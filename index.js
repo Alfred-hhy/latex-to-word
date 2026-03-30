@@ -1,10 +1,9 @@
-// Vercel entrypoint
+// Vercel entrypoint - 无需 express
 const previewHandler = require('./api/preview');
 const convertHandler = require('./api/convert');
 const path = require('path');
 const fs = require('fs');
 
-// 读取静态文件
 const staticFiles = {
   '/': 'public/index.html'
 };
@@ -13,8 +12,8 @@ async function handler(req, res) {
   const urlPath = req.url.split('?')[0];
 
   try {
-    // API 路由
     if (urlPath === '/api/health') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
       return res.json({ status: 'ok', timestamp: new Date().toISOString() });
     }
 
@@ -26,7 +25,6 @@ async function handler(req, res) {
       return convertHandler(req, res);
     }
 
-    // 静态文件
     if (urlPath === '/' || urlPath === '/index.html') {
       const indexPath = path.join(__dirname, 'public', 'index.html');
       const content = fs.readFileSync(indexPath, 'utf-8');
@@ -34,7 +32,6 @@ async function handler(req, res) {
       return res.send(content);
     }
 
-    // 404
     res.status(404).json({ error: 'Not found' });
 
   } catch (error) {
