@@ -10,7 +10,7 @@ function preprocessLatex(latex) {
   return processed;
 }
 
-module.exports = async (req, res) => {
+async function handler(req, res) {
   try {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -45,4 +45,6 @@ module.exports = async (req, res) => {
     console.error('预览接口错误:', error);
     res.status(500).json({ error: '转换失败', details: error.message });
   }
-};
+}
+
+module.exports = handler;

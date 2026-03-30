@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/api/preview", "destination": "/api/preview.js" },
+    { "source": "/api/convert", "destination": "/api/convert.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

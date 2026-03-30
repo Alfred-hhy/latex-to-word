@@ -49,7 +49,7 @@ function extractFormulas(text) {
   return formulas.sort((a, b) => a.index - b.index);
 }
 
-module.exports = async (req, res) => {
+async function handler(req, res) {
   try {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -157,4 +157,6 @@ module.exports = async (req, res) => {
     console.error('转换接口错误:', error);
     res.status(500).json({ error: '转换失败', details: error.message });
   }
-};
+}
+
+module.exports = handler;
