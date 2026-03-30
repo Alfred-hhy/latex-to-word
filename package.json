@@ -1,0 +1,16 @@
+{
+  "name": "latex-to-word",
+  "version": "1.0.0",
+  "description": "LaTeX公式转Word工具 - 将LaTeX数学公式转换为Word原生OMML格式",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "dependencies": {
+    "docx": "^8.5.0",
+    "express": "^4.18.2",
+    "latex-to-omml": "^2.1.1",
+    "multer": "^1.4.5-lts.1"
+  }
+}

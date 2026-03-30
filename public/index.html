@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaTeX to Word - LaTeX公式转Word工具</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      color: white;
+      padding: 30px 0;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .main-content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+      color: white;
+      padding: 16px 24px;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .panel-body {
+      padding: 24px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 300px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      resize: vertical;
+      transition: border-color 0.3s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea::placeholder {
+      color: #a0aec0;
+    }
+
+    .preview-area {
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px;
+      min-height: 300px;
+      font-family: 'Times New Roman', serif;
+      overflow-y: auto;
+    }
+
+    .preview-area.error {
+      color: #e53e3e;
+      background: #fff5f5;
+    }
+
+    .preview-formula {
+      padding: 8px 0;
+      line-height: 1.8;
+    }
+
+    .preview-block {
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    .preview-inline {
+      display: inline;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+
+    .btn-secondary:hover {
+      background: #cbd5e0;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .file-upload {
+      position: relative;
+    }
+
+    .file-upload input[type="file"] {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .examples {
+      margin-top: 24px;
+    }
+
+    .examples h3 {
+      color: #4a5568;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    .example-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .example-tag {
+      background: #edf2f7;
+      color: #4a5568;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .example-tag:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    .file-info {
+      margin-top: 8px;
+      font-size: 0.875rem;
+      color: #718096;
+    }
+
+    .status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .status.loading {
+      background: #ebf8ff;
+      color: #2b6cb0;
+      display: block;
+    }
+
+    .status.success {
+      background: #f0fff4;
+      color: #276749;
+      display: block;
+    }
+
+    .status.error {
+      background: #fff5f5;
+      color: #c53030;
+      display: block;
+    }
+
+    .help-section {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .help-section h3 {
+      color: #4a5568;
+      margin-bottom: 16px;
+    }
+
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+
+    .help-item {
+      background: #f7fafc;
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    .help-item code {
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.875rem;
+      color: #6b46c1;
+    }
+
+    .help-item pre {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 12px;
+      border-radius: 6px;
+      margin-top: 8px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.8rem;
+      overflow-x: auto;
+    }
+
+    footer {
+      text-align: center;
+      color: rgba(255,255,255,0.8);
+      padding: 20px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>LaTeX to Word</h1>
+      <p>将 LaTeX 公式转换为 Word 原生可编辑公式（OMML格式）</p>
+    </header>
+
+    <div class="main-content">
+      <!-- 输入面板 -->
+      <div class="panel">
+        <div class="panel-header">输入 LaTeX 或文本</div>
+        <div class="panel-body">
+          <textarea id="inputText" placeholder="输入 LaTeX 公式或混合文本...
+
+示例：
+这是一段包含公式的文本 $E = mc^2$，公式可以嵌套在段落中。
+
+独立公式块：
+$$
+\int_{0}^{\infty} e^{-x^2} dx = \frac{\sqrt{\pi}}{2}
+$$
+
+矩阵示例：
+$$
+\begin{pmatrix}
+a_{11} & a_{12} \\
+a_{21} & a_{22}
+\end{pmatrix}
+$$"></textarea>
+
+          <div class="actions">
+            <button class="btn btn-primary" id="previewBtn">
+              <span>预览公式</span>
+            </button>
+            <button class="btn btn-primary" id="convertBtn">
+              <span>下载 Word</span>
+            </button>
+            <div class="file-upload">
+              <button class="btn btn-secondary">
+                <span>上传文件</span>
+              </button>
+              <input type="file" id="fileInput" accept=".tex,.txt">
+            </div>
+            <button class="btn btn-secondary" id="clearBtn">
+              <span>清空</span>
+            </button>
+          </div>
+
+          <div id="fileInfo" class="file-info"></div>
+          <div id="status" class="status"></div>
+
+          <div class="examples">
+            <h3>点击示例插入：</h3>
+            <div class="example-list">
+              <span class="example-tag" data-latex="\frac{a}{b}">分数</span>
+              <span class="example-tag" data-latex="\sqrt{x}">根号</span>
+              <span class="example-tag" data-latex="x^{n}">上标</span>
+              <span class="example-tag" data-latex="x_{i}">下标</span>
+              <span class="example-tag" data-latex="\int_{0}^{1} f(x) dx">积分</span>
+              <span class="example-tag" data-latex="\sum_{i=1}^{n} x_i">求和</span>
+              <span class="example-tag" data-latex="\alpha, \beta, \gamma, \theta">希腊字母</span>
+              <span class="example-tag" data-latex="\begin{pmatrix} a & b \\ c & d \end{pmatrix}">矩阵</span>
+              <span class="example-tag" data-latex="\lim_{x \to \infty}">极限</span>
+              <span class="example-tag" data-latex="\left(\frac{a}{b}\right)">括号</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 预览面板 -->
+      <div class="panel">
+        <div class="panel-header">预览效果</div>
+        <div class="panel-body">
+          <div id="preview" class="preview-area">
+            <p style="color: #a0aec0; text-align: center; margin-top: 140px;">
+              点击「预览公式」查看效果
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 帮助文档 -->
+    <div class="help-section">
+      <h3>支持的 LaTeX 命令</h3>
+      <div class="help-grid">
+        <div class="help-item">
+          <h4>分数与根号</h4>
+          <code>\frac{a}{b}</code> <code>\sqrt{x}</code>
+        </div>
+        <div class="help-item">
+          <h4>积分与求和</h4>
+          <code>\int</code> <code>\sum</code> <code>\prod</code> <code>\lim</code>
+        </div>
+        <div class="help-item">
+          <h4>矩阵</h4>
+          <code>matrix</code> <code>pmatrix</code> <code>bmatrix</code> <code>vmatrix</code>
+        </div>
+        <div class="help-item">
+          <h4>希腊字母</h4>
+          <code>\alpha</code> <code>\beta</code> <code>\gamma</code> <code>\theta</code> <code>\pi</code>
+        </div>
+        <div class="help-item">
+          <h4>上下标</h4>
+          <code>^{}</code> <code>_{}</code> <code>\hat{}</code> <code>\vec{}</code>
+        </div>
+        <div class="help-item">
+          <h4>多行公式</h4>
+          <code>align</code> <code>cases</code> <code>equation</code>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>LaTeX to Word 转换工具 | 支持 AI 生成公式智能修复</p>
+    </footer>
+  </div>
+
+  <script>
+    const inputText = document.getElementById('inputText');
+    const previewBtn = document.getElementById('previewBtn');
+    const convertBtn = document.getElementById('convertBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const status = document.getElementById('status');
+    const preview = document.getElementById('preview');
+
+    // 状态管理
+    let isLoading = false;
+
+    function setLoading(loading, message = '') {
+      isLoading = loading;
+      previewBtn.disabled = loading;
+      convertBtn.disabled = loading;
+      status.className = 'status' + (loading ? ' loading' : '');
+      if (loading) {
+        status.textContent = message || '处理中...';
+      }
+    }
+
+    function showError(message) {
+      status.className = 'status error';
+      status.textContent = message;
+    }
+
+    function showSuccess(message) {
+      status.className = 'status success';
+      status.textContent = message;
+      setTimeout(() => {
+        status.className = 'status';
+      }, 3000);
+    }
+
+    // 预览公式
+    previewBtn.addEventListener('click', async () => {
+      const text = inputText.value.trim();
+      if (!text) {
+        showError('请输入 LaTeX 公式');
+        return;
+      }
+
+      setLoading(true, '正在解析公式...');
+
+      try {
+        // 提取所有公式进行预览
+        const formulas = extractFormulas(text);
+
+        if (formulas.length === 0) {
+          preview.innerHTML = `<p style="color: #4a5568;">${escapeHtml(text)}</p>`;
+          showSuccess('纯文本，无公式');
+          return;
+        }
+
+        // 对每个公式调用预览 API
+        let html = '';
+        let lastIndex = 0;
+
+        for (const formula of formulas) {
+          // 添加公式前的文本
+          const textBefore = text.substring(lastIndex, formula.index);
+          if (textBefore.trim()) {
+            html += `<span>${escapeHtml(textBefore)}</span> `;
+          }
+
+          // 调用 API 预览公式
+          try {
+            const response = await fetch('/api/preview', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ latex: formula.content })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+              // 将 OMML 转换为可显示的 HTML（简化处理）
+              const formulaHtml = ommlToHtml(result.omml, formula.type);
+              html += formulaHtml;
+            } else {
+              html += `<span style="color: #e53e3e;">[公式错误: ${escapeHtml(formula.content)}]</span>`;
+            }
+          } catch (e) {
+            html += `<span style="color: #e53e3e;">[预览失败]</span>`;
+          }
+
+          lastIndex = formula.index + formula.original.length;
+        }
+
+        // 添加剩余文本
+        if (lastIndex < text.length) {
+          html += `<span>${escapeHtml(text.substring(lastIndex))}</span>`;
+        }
+
+        preview.innerHTML = `<div class="preview-formula">${html}</div>`;
+        showSuccess(`预览成功，找到 ${formulas.length} 个公式`);
+
+      } catch (error) {
+        console.error('预览错误:', error);
+        showError('预览失败: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // 提取公式
+    function extractFormulas(text) {
+      const formulas = [];
+
+      // 块级公式 $$...$$
+      const blockRegex = /\$\$([^$]+)\$\$/g;
+      let match;
+      while ((match = blockRegex.exec(text)) !== null) {
+        formulas.push({
+          type: 'block',
+          original: match[0],
+          content: match[1].trim(),
+          index: match.index
+        });
+      }
+
+      // 行内公式 $...$
+      const inlineRegex = /\$([^$]+)\$/g;
+      while ((match = inlineRegex.exec(text)) !== null) {
+        // 跳过已被块级公式匹配的部分
+        const isInBlock = formulas.some(f =>
+          match.index >= f.index && match.index < f.index + f.original.length
+        );
+        if (!isInBlock) {
+          formulas.push({
+            type: 'inline',
+            original: match[0],
+            content: match[1].trim(),
+            index: match.index
+          });
+        }
+      }
+
+      return formulas.sort((a, b) => a.index - b.index);
+    }
+
+    // OMML 转 HTML（简化实现，实际应该用 MathJax 或 KaTeX 渲染）
+    function ommlToHtml(omml, type) {
+      // 这里返回一个占位符，实际项目中可以用 mathjax-node 或其他库渲染
+      // 由于浏览器无法直接渲染 OMML，我们返回原始 LaTeX 作为文本显示
+      const displayClass = type === 'block' ? 'preview-block' : 'preview-inline';
+      return `<span class="${displayClass}" style="background: #f0f4ff; padding: 2px 8px; border-radius: 4px; font-family: monospace;">[公式已转换]</span>`;
+    }
+
+    // HTML 转义
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 转换并下载 Word
+    convertBtn.addEventListener('click', async () => {
+      const text = inputText.value.trim();
+      if (!text) {
+        showError('请输入内容');
+        return;
+      }
+
+      setLoading(true, '正在转换为 Word...');
+
+      try {
+        const response = await fetch('/api/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || '转换失败');
+        }
+
+        // 下载文件
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'latex-output.docx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showSuccess('Word 文档已下载');
+
+      } catch (error) {
+        console.error('转换错误:', error);
+        showError('转换失败: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // 文件上传
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      fileInfo.textContent = `已选择: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+
+      setLoading(true, '正在读取文件...');
+
+      try {
+        const text = await file.text();
+        inputText.value = text;
+        showSuccess('文件已加载');
+
+        // 自动预览
+        await previewBtn.click();
+
+      } catch (error) {
+        showError('文件读取失败: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    // 清空
+    clearBtn.addEventListener('click', () => {
+      inputText.value = '';
+      preview.innerHTML = `<p style="color: #a0aec0; text-align: center; margin-top: 140px;">
+        点击「预览公式」查看效果
+      </p>`;
+      fileInfo.textContent = '';
+      fileInput.value = '';
+      status.className = 'status';
+    });
+
+    // 示例点击
+    document.querySelectorAll('.example-tag').forEach(tag => {
+      tag.addEventListener('click', () => {
+        const latex = tag.dataset.latex;
+        const current = inputText.value;
+        inputText.value = current + (current && !current.endsWith(' ') ? ' ' : '') + `$${latex}$`;
+        inputText.focus();
+      });
+    });
+  </script>
+</body>
+</html>
